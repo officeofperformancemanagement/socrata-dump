@@ -3,7 +3,7 @@
 ```
 usage: socrata-dump [-h] [--compression COMPRESSION] [--file-size-limit FILE_SIZE_LIMIT] [--limit LIMIT] base outpath
 
-Dump Socrata Data Portal Metadata and Assets into a Local Folder
+Dump Socrata Instance into a Folder, including both Metadata and Data
 
 positional arguments:
   base                  base url of Socrata instance
