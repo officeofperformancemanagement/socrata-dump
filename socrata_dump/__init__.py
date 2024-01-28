@@ -8,8 +8,11 @@ import zipfile
 from urllib.request import urlretrieve
 
 # avoid _csv.Error: field larger than field limit (131072)
-csv.field_size_limit(sys.maxsize)
-
+try:
+    csv.field_size_limit(sys.maxsize)
+except OverflowError as e:
+    # OverflowError: Python int too large to convert to C long
+    csv.field_size_limit(2147483647) # maximum value of a long
 
 def main(
     base: str,
@@ -35,6 +38,10 @@ def main(
         base = "https://" + base
         print('[socrata-dump] added "https://" to the start of the base')
 
+    # trim ending / (because we add it back in later)
+    if base.endswith("/"):
+        base = base[:-1]
+
     url = f"{base}/api/views/metadata/v1/"
 
     if limit:
@@ -46,12 +53,8 @@ def main(
         name = asset["name"]
         print(f'\n[socrata-dump] [{id}] {index} processing "{name}"')
 
-        if (
-            "provenance" in asset
-            and isinstance(asset["provenance"], str)
-            and asset["provenance"] != provenance
-        ):
-            print(f"[socrata-dump] [{id}] skipping asset because of its provenance")
+        if isinstance(provenance, str) and asset.get("provenance", "").lower() != provenance.lower():
+            print(f'[socrata-dump] [{id}] skipping asset because its provenance is {asset.get("provenance", "None")}')
             continue
 
         metadata_url = f"{base}/api/views/{id}.json"
@@ -141,6 +144,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--limit", "-l", type=int, help="total number of assets to process"
+    )
+    parser.add_argument(
+        "--provenance", "-p", type=str, help='filter by provenance: "community" or "official"'
     )
 
     args = parser.parse_args()
