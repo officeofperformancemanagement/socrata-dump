@@ -5,12 +5,11 @@ import os
 import requests
 import sys
 import zipfile
-from urllib.request import urlretrieve
 
 # avoid _csv.Error: field larger than field limit (131072)
 try:
     csv.field_size_limit(sys.maxsize)
-except OverflowError as e:
+except OverflowError:
     # OverflowError: Python int too large to convert to C long
     csv.field_size_limit(2147483647) # maximum value of a long
 
@@ -19,11 +18,16 @@ def main(
     outpath: str = None,
     compression: str = None,
     file_size_limit: int = None,
+    key_id: str = None,
+    key_secret: str = None,
     limit: int = 10,
     provenance: str = None,
     asset_types: list[str] = ["dataset", "filter"],
 ):
     print("[socrata-dump] starting")
+
+    auth = (key_id, key_secret) if key_id and key_secret else None
+    # print("[socrata-dump] auth", auth)
 
     if not os.path.isabs(outpath):
         raise Exception("[socrata-dump] outpath is not absolute {outpath}")
@@ -48,7 +52,7 @@ def main(
         url += f"?limit={limit}"
 
     print(f"[socrata-dump] fetching {url}")
-    for index, asset in enumerate(requests.get(url).json()):
+    for index, asset in enumerate(requests.get(url, auth=auth).json()):
         id = asset["id"]
         name = asset["name"]
         print(f'\n[socrata-dump] [{id}] {index} processing "{name}"')
@@ -59,7 +63,7 @@ def main(
 
         metadata_url = f"{base}/api/views/{id}.json"
         print(f"[socrata-dump] [{id}] fetching " + metadata_url)
-        metadata = requests.get(metadata_url).json()
+        metadata = requests.get(metadata_url, auth=auth).json()
 
         if "error" in metadata:
             if "message" in metadata:
@@ -98,8 +102,11 @@ def main(
         download_url = f"{base}/api/views/{id}/rows.csv?accessType=DOWNLOAD"
         print(f'[socrata-dump] [{id}] downloading "{name}"')
         try:
-            urlretrieve(download_url, download_csv_path)
-        except Exception as e:
+            r = requests.get(download_url, auth=auth, stream=True)
+            with open(download_csv_path, "wb") as fd:
+                for chunk in r.iter_content(chunk_size=128):
+                    fd.write(chunk)
+        except Exception:
             # skip this asset if problem downloading
             continue
         print(f'[socrata-dump] [{id}] downloaded "{name}"')
@@ -141,6 +148,12 @@ if __name__ == "__main__":
         "--file-size-limit",
         type=int,
         help="total max file size in megabytes.  any file larger than this will be deleted",
+    )
+    parser.add_argument(
+        "--key-id", type=str, help='keyId for Socrata API'
+    )
+    parser.add_argument(
+        "--key-secret", type=str, help='keySecret for Socrata API'
     )
     parser.add_argument(
         "--limit", "-l", type=int, help="total number of assets to process"
