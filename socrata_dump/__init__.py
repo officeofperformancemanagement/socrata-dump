@@ -11,9 +11,10 @@ try:
     csv.field_size_limit(sys.maxsize)
 except OverflowError:
     # OverflowError: Python int too large to convert to C long
-    csv.field_size_limit(2147483647) # maximum value of a long
+    csv.field_size_limit(2147483647)  # maximum value of a long
 
-def main(
+
+def dump(
     base: str,
     outpath: str = None,
     compression: str = None,
@@ -57,8 +58,13 @@ def main(
         name = asset["name"]
         print(f'\n[socrata-dump] [{id}] {index} processing "{name}"')
 
-        if isinstance(provenance, str) and asset.get("provenance", "").lower() != provenance.lower():
-            print(f'[socrata-dump] [{id}] skipping asset because its provenance is {asset.get("provenance", "None")}')
+        if (
+            isinstance(provenance, str)
+            and asset.get("provenance", "").lower() != provenance.lower()
+        ):
+            print(
+                f'[socrata-dump] [{id}] skipping asset because its provenance is {asset.get("provenance", "None")}'
+            )
             continue
 
         metadata_url = f"{base}/api/views/{id}.json"
@@ -132,7 +138,7 @@ def main(
                         )
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         prog="socrata-dump",
         description="Dump Socrata Instance into a Folder, including both Metadata and Data",
@@ -149,19 +155,22 @@ if __name__ == "__main__":
         type=int,
         help="total max file size in megabytes.  any file larger than this will be deleted",
     )
-    parser.add_argument(
-        "--key-id", type=str, help='keyId for Socrata API'
-    )
-    parser.add_argument(
-        "--key-secret", type=str, help='keySecret for Socrata API'
-    )
+    parser.add_argument("--key-id", type=str, help="keyId for Socrata API")
+    parser.add_argument("--key-secret", type=str, help="keySecret for Socrata API")
     parser.add_argument(
         "--limit", "-l", type=int, help="total number of assets to process"
     )
     parser.add_argument(
-        "--provenance", "-p", type=str, help='filter by provenance: "community" or "official"'
+        "--provenance",
+        "-p",
+        type=str,
+        help='filter by provenance: "community" or "official"',
     )
 
     args = parser.parse_args()
 
-    main(**vars(args))
+    dump(**vars(args))
+
+
+if __name__ == "__main__":
+    main()

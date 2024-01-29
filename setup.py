@@ -12,7 +12,7 @@ setup(
     entry_points={
         "console_scripts": ["socrata-dump=socrata_dump.__init__:main"],
     },
-    version="0.1.0",
+    version="0.1.1",
     description="Dump Socrata Instance into a Folder, including both Metadata and Data",
     long_description=long_description,
     long_description_content_type="text/markdown",
