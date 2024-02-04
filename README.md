@@ -1,8 +1,8 @@
 # socrata-dump
 
 ```
-usage: socrata-dump [-h] [--compression COMPRESSION] [--file-size-limit FILE_SIZE_LIMIT] [--key-id KEY_ID]
-                    [--key-secret KEY_SECRET] [--limit LIMIT] [--provenance PROVENANCE]
+usage: socrata-dump [-h] [--compression COMPRESSION] [--file-size-limit FILE_SIZE_LIMIT] [--in-memory IN_MEMORY]
+                    [--key-id KEY_ID] [--key-secret KEY_SECRET] [--limit LIMIT] [--provenance PROVENANCE]
                     base outpath
 
 Dump Socrata Instance into a Folder, including both Metadata and Data
@@ -17,6 +17,9 @@ options:
                         type of compression to apply to csv files. currently only valid value is "zip"
   --file-size-limit FILE_SIZE_LIMIT
                         total max file size in megabytes. any file larger than this will be deleted
+  --in-memory IN_MEMORY
+                        skip writing intermediate files to disk. increases memory usage, but avoids writing .csv if you
+                        only want .csv.zip
   --key-id KEY_ID       keyId for Socrata API
   --key-secret KEY_SECRET
                         keySecret for Socrata API

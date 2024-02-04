@@ -21,6 +21,7 @@ def dump(
     file_size_limit: int = None,
     key_id: str = None,
     key_secret: str = None,
+    in_memory: bool = False,
     limit: int = 10,
     provenance: str = None,
     asset_types: list[str] = ["dataset", "filter"],
@@ -107,11 +108,16 @@ def dump(
         download_csv_path = os.path.join(dataset_dirpath, csv_filename)
         download_url = f"{base}/api/views/{id}/rows.csv?accessType=DOWNLOAD"
         print(f'[socrata-dump] [{id}] downloading "{name}"')
+        download_csv_bytes = None
         try:
-            r = requests.get(download_url, auth=auth, stream=True)
-            with open(download_csv_path, "wb") as fd:
-                for chunk in r.iter_content(chunk_size=128):
-                    fd.write(chunk)
+            if in_memory and compression == "zip":
+                r = requests.get(download_url, auth=auth)
+                download_csv_bytes = r.content
+            else:
+                r = requests.get(download_url, auth=auth, stream=True)
+                with open(download_csv_path, "wb") as fd:
+                    for chunk in r.iter_content(chunk_size=128):
+                        fd.write(chunk)
         except Exception:
             # skip this asset if problem downloading
             continue
@@ -122,8 +128,13 @@ def dump(
             with zipfile.ZipFile(
                 zip_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
             ) as zip:
-                zip.write(download_csv_path, "./data/{id}/{id}.csv.zip")
-            os.remove(download_csv_path)
+                arcname = "./data/{id}/{id}.csv.zip"
+                if in_memory:
+                    zip.writestr(arcname, download_csv_bytes)
+                else:
+                    zip.write(download_csv_path, arcname)
+            if os.path.isfile(download_csv_path):
+                os.remove(download_csv_path)
 
         # remove any file above file limit in the data folder
         if isinstance(file_size_limit, int):
@@ -154,6 +165,11 @@ def main():
         "--file-size-limit",
         type=int,
         help="total max file size in megabytes.  any file larger than this will be deleted",
+    )
+    parser.add_argument(
+        "--in-memory",
+        type=bool,
+        help="skip writing intermediate files to disk. increases memory usage, but avoids writing .csv if you only want .csv.zip",
     )
     parser.add_argument("--key-id", type=str, help="keyId for Socrata API")
     parser.add_argument("--key-secret", type=str, help="keySecret for Socrata API")
