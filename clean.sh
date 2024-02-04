@@ -1,3 +1,3 @@
 #!/bin/sh -e
 
-rm -fr .ruff_cache dist socrata_dump.egg-info Pipfile Pipfile.lock
+rm -fr .ruff_cache build dist socrata_dump.egg-info Pipfile Pipfile.lock
