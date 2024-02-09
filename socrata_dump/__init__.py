@@ -128,7 +128,7 @@ def dump(
             with zipfile.ZipFile(
                 zip_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
             ) as zip:
-                arcname = "./data/{id}/{id}.csv.zip"
+                arcname = f'./data/{id}/{id}.csv.zip'
                 if in_memory:
                     zip.writestr(arcname, download_csv_bytes)
                 else:
