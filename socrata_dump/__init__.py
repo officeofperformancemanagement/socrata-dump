@@ -25,6 +25,7 @@ def dump(
     limit: int = 10,
     provenance: str = None,
     asset_types: list[str] = ["dataset", "filter"],
+    scope: str = None
 ):
     print("[socrata-dump] starting")
 
@@ -59,13 +60,9 @@ def dump(
         name = asset["name"]
         print(f'\n[socrata-dump] [{id}] {index} processing "{name}"')
 
-        if (
-            isinstance(provenance, str)
-            and asset.get("provenance", "").lower() != provenance.lower()
-        ):
-            print(
-                f'[socrata-dump] [{id}] skipping asset because its provenance is {asset.get("provenance", "None")}'
-            )
+        # Socrata will lower or upper-case the provenance value depending on the version of the API
+        if isinstance(provenance, str) and asset.get("provenance", "").lower() != provenance.lower():
+            print(f'[socrata-dump] [{id}] skipping asset because its provenance is {asset.get("provenance", "None")}')
             continue
 
         metadata_url = f"{base}/api/views/{id}.json"
@@ -75,6 +72,15 @@ def dump(
         if "error" in metadata:
             if "message" in metadata:
                 print(metadata["message"])
+                continue
+
+        if isinstance(scope, str):
+            if "permissions" not in metadata:
+                print(f"[socrata-dump] [{id}] skipping asset because its metadata is missing \"permissions\" and thus we can't determine scope")
+                continue
+
+            if metadata.get("permissions", {}).get("scope", "").lower() != scope.lower():
+                print(f'[socrata-dump] [{id}] skipping asset because its scope is {asset.get("scope", "None")}')
                 continue
 
         if "columns" in metadata:
@@ -181,6 +187,9 @@ def main():
         "-p",
         type=str,
         help='filter by provenance: "community" or "official"',
+    )
+    parser.add_argument(
+        "--scope", type=str, help='filter by specific scope: "private" or "site"'
     )
 
     args = parser.parse_args()
