@@ -18,6 +18,7 @@ def dump(
     base: str,
     outpath: str = None,
     compression: str = None,
+    compression_types: list[str] = ["zip", None],
     file_size_limit: int = None,
     key_id: str = None,
     key_secret: str = None,
@@ -35,6 +36,9 @@ def dump(
 
     if not os.path.isabs(outpath):
         raise Exception("[socrata-dump] outpath is not absolute {outpath}")
+
+    if compression not in compression_types:
+        raise Exception("[socrata-dump] unsupported compression. Currently, only zip is supported.")
 
     if not os.path.isdir(outpath):
         os.mkdir(outpath)
