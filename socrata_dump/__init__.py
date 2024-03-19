@@ -30,7 +30,8 @@ def dump(
     print("[socrata-dump] starting")
 
     auth = (key_id, key_secret) if key_id and key_secret else None
-    # print("[socrata-dump] auth", auth)
+    if auth:
+        print("[socrata-dump] using authentication")
 
     if not os.path.isabs(outpath):
         raise Exception("[socrata-dump] outpath is not absolute {outpath}")
